@@ -2,7 +2,9 @@ import { useState, useRef } from 'react'
 import api from '../api'
 
 function ChatBox() {
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: '> Welcome to the terminal!\n\n> I am Colby Todd\'s AI assistant.\n> Ask me about my career, projects, or hobbies.' }
+  ])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesRef = useRef(null)
@@ -24,9 +26,10 @@ function ChatBox() {
     setIsLoading(true)
 
     try {
+      // Try real API call first
       const response = await api.post('/chat', { message: inputValue })
       
-      // Handle streaming or non-streaming response
+      // Handle streaming or non-streaming response from backend
       if (response.data.choices && response.data.choices[0].delta) {
         let accumulatedText = ''
         
@@ -42,9 +45,20 @@ function ChatBox() {
       }
     } catch (error) {
       console.error('Error:', error)
+      // Provide mock canned responses when no backend is available
+      const mockResponses = [
+        "I'm here to help! Ask me about my work history, projects, or hobbies.",
+        "That's an interesting question. I specialize in full-stack development and AI/ML.",
+        "Sure! I've worked with React, Node.js, Python, and various cloud platforms.",
+        "I'm passionate about building scalable web applications and open-source tools.",
+        "Feel free to ask more - I love learning about new technologies!",
+      ]
+      
+      // Pick a random canned response
+      const randomIndex = Math.floor(Math.random() * mockResponses.length)
       setMessages(prev => [...prev, { 
-        role: 'system', 
-        content: 'Connection to AI service failed. Please check your network connection.' 
+        role: 'assistant', 
+        content: `> ${mockResponses[randomIndex]}`
       }])
     } finally {
       setIsLoading(false)
@@ -54,7 +68,7 @@ function ChatBox() {
   return (
     <div className="space-y-4">
       {/* Messages history */}
-      <div className="h-96 overflow-y-auto border-2 border-terminal-border rounded-lg p-4 bg-terminal-dark">
+      <div ref={messagesRef} className="h-96 overflow-y-auto p-4">
         {messages.length === 0 ? (
           <p className="text-terminal-muted text-center mt-8 italic">
             Start a conversation by asking me something...
@@ -63,14 +77,12 @@ function ChatBox() {
           messages.map((msg, index) => (
             <div 
               key={index} 
-              className={`mb-4 ${
-                msg.role === 'user' ? 'text-right' : msg.role === 'system' ? 'text-center text-terminal-muted' : 'text-left'
+              className={`mb-3 ${
+                msg.role === 'user' ? 'text-left' : msg.role === 'system' ? 'text-center text-terminal-muted' : 'text-left'
               }`}
             >
               {msg.role !== 'system' && (
-                <div className="inline-block px-4 py-2 rounded-lg bg-terminal-bg border border-terminal-border">
-                  {msg.content}
-                </div>
+                <span className="text-white">{msg.content}</span>
               )}
             </div>
           ))
